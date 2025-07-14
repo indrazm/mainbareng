@@ -25,10 +25,10 @@ model Events {
   id Int @id @default(autoincrement())
   title String
   description String?
-  sport_type String?
-  date_time DateTime?
+  sport_type String
+  date_time DateTime
   max_participant Int?
-  city String?
+  city String
   location_name String?
   latitude Float?
   longitude Float?
@@ -36,10 +36,11 @@ model Events {
   is_private Boolean?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  user_id Int?
+  user_id Int
 
-  user Users? @relation("UserEvents", fields: [user_id], references: [id])
+  user Users @relation("UserEvents", fields: [user_id], references: [id])
   participants Participants[] 
+  eventbanner EventBanners[]
 }
 
 model Participants {
@@ -53,4 +54,14 @@ model Participants {
   event Events @relation(fields: [event_id], references: [id])
 
   @@unique([user_id, event_id])
+}
+model EventBanners {
+  id Int @id @default(autoincrement())
+  event_id Int
+  name String
+  size Int
+  path String
+  created_at DateTime @default(now())
+
+  event Events @relation(fields: [event_id], references: [id])
 }

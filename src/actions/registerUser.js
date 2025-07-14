@@ -15,12 +15,12 @@ export async function registerUser(formData) {
 
   const existing = await prisma.users.findUnique({ where: { email } });
   if (existing) {
-    throw new Error("Email already registered");
+    throw new Error("User already exist");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.users.create({
+  await prisma.users.create({
     data: {
       email,
       password: hashedPassword,
@@ -28,6 +28,4 @@ export async function registerUser(formData) {
       last_name,
     },
   });
-
-  return user;
 }

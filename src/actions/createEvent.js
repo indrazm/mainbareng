@@ -1,0 +1,90 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { getActiveUser } from "@/utils/getActiveUser";
+import { revalidatePath } from "next/cache";
+import { s3client } from "@/lib/s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+export async function createEvent(formData) {
+  const user = await getActiveUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const title = formData.get("title");
+  const description = formData.get("description");
+  const sport_type = formData.get("sport_type");
+  const date = formData.get("date");
+  const time = formData.get("time");
+  const max_participant = formData.get("max_participant");
+  const location_name = formData.get("location_name");
+  const city = formData.get("city");
+  const price = formData.get("price");
+  const is_private = formData.get("is_private");
+  const image = formData.get("image");
+
+  const date_time = new Date(`${date} ${time}`);
+  if (isNaN(date_time.getTime())) {
+    throw new Error("Invalid date or time format");
+  }
+
+  const event = await prisma.events.create({
+    data: {
+      title,
+      description,
+      sport_type,
+      date_time,
+      max_participant: max_participant ? parseInt(max_participant) : null,
+      location_name,
+      city,
+      price: price ? parseInt(price) : null,
+      is_private: is_private === "true" || is_private === "on",
+      user_id: user.id,
+    },
+  });
+
+  let bannerPath = null;
+  let bannerName = null;
+  let bannerSize = null;
+
+  if (
+    image &&
+    typeof image.arrayBuffer === "function" &&
+    image.size > 0 &&
+    image.name
+  ) {
+    const buffer = Buffer.from(await image.arrayBuffer());
+    const timestamp = event.created_at.toISOString().replace(/[:.]/g, "-");
+    const extension = image.name.split(".").pop();
+    const key = `event-${timestamp}.${extension}`;
+
+    try {
+      await s3client.send(
+        new PutObjectCommand({
+          Bucket: "mainbareng",
+          Key: key,
+          Body: buffer,
+          ContentType: image.type,
+        })
+      );
+
+      bannerPath = `https://pub-030c44170f76454a961c419019a7b038.r2.dev/mainbareng/${key}`;
+      bannerName = key;
+      bannerSize = image.size;
+    } catch (err) {
+      console.error("Image upload failed:", err);
+    }
+  }
+
+  if (bannerPath) {
+    await prisma.eventBanners.create({
+      data: {
+        event_id: event.id,
+        name: bannerName,
+        size: bannerSize,
+        path: bannerPath,
+      },
+    });
+  }
+
+  revalidatePath("/event");
+}

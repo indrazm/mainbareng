@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
+import LogoutButton from "./LogoutButton";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -29,11 +30,7 @@ export default function Navbar() {
           </Link>
         </div>
       ) : (
-        <Link href="/">
-          <Button size="sm" color="danger">
-            Log Out
-          </Button>
-        </Link>
+        <LogoutButton />
       )}
     </nav>
   );

@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
 export async function loginUser(formData) {
   const email = formData.get("email");
@@ -12,9 +14,28 @@ export async function loginUser(formData) {
   }
 
   const user = await prisma.users.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw new Error("Invalid credentials");
+
+  if (!user) {
+    throw new Error("User not found");
   }
 
-  return user;
+  if (!(await bcrypt.compare(password, user.password))) {
+    throw new Error("Invalid password");
+  }
+
+  const payload = {
+    userId: user.id,
+    email: user.email,
+    first_name: user.first_name,
+  };
+
+  const jwtToken = jwt.sign(payload, process.env.JWT_SECRET);
+
+  const cookieStore = await cookies();
+
+  cookieStore.set("token", jwtToken, {
+    httpOnly: true,
+    path: "/",
+    maxAge: 60 * 60 * 24,
+  });
 }

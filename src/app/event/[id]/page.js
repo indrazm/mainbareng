@@ -6,7 +6,6 @@ import { getActiveUser } from "@/utils/getActiveUser";
 import { hasJoinedEvent } from "@/utils/hasJoinedEvent";
 import { joinEvent } from "@/actions/joinEvent";
 import { cancelJoinEvent } from "@/actions/cancelJoinEvent";
-import { deleteEvent } from "@/actions/deleteEvent";
 import DeleteEventButton from "@/components/DeleteEventButton";
 
 export default async function EventDetailPage({ params }) {
@@ -41,7 +40,7 @@ export default async function EventDetailPage({ params }) {
   const creator = `${event.user.first_name} ${event.user.last_name}`;
 
   const banner = event.eventbanner[0];
-  console.log(banner);
+
   const formattedDate = new Date(event.date_time).toLocaleString("id-ID", {
     timeZone: "Asia/Jakarta",
     weekday: "long",
